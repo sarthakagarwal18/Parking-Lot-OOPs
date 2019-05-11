@@ -1,99 +1,81 @@
 import java.util.ArrayList;
 import java.util.HashMap;
 
-/**
- * TODO
- * 1. Multiple entry points for each floor
- * 2. Multiple spots for car, bus
- * 3. Finding spot interface implementation
- */
-
 public class ParkingLot {
 
-    private int numberOfSpots;
-    private int numberOfEntryPoints;
-    private int numberOfSpotsOnFloor;
+    private static int numberOfSpots;
+    private static int numberOfFloors;
 
-    // Map for SpotID to ParkingSpot
-    private HashMap<Integer, ParkingSpot> spotMap = new HashMap<Integer, ParkingSpot>();
+    // Map for SpotNumber to ParkingSpot
+    private static HashMap<Integer, ParkingSpot> spotMap = new HashMap<Integer, ParkingSpot>();
     // Map for CarNumber to ParkingSpot
-    private HashMap<String, ParkingSpot > carToSpotMap = new HashMap<String, ParkingSpot>();
+    private static HashMap<String, ArrayList<ParkingSpot> > vehicleToSpotMap = new HashMap<String, ArrayList<ParkingSpot> >();
     // Map for Color to ParkingSpots
-    private HashMap<String, ArrayList<ParkingSpot> > colorToSpotMap = new HashMap<String, ArrayList<ParkingSpot> >();
+    private static HashMap<String, ArrayList<ParkingSpot> > colorToSpotMap = new HashMap<String, ArrayList<ParkingSpot> >();
 
-    ParkingLot(int numberOfSpots, int numberOfEntryPoints) {
+    ParkingLot(){
 
-        this.numberOfSpots = numberOfSpots;
-        this.numberOfEntryPoints = numberOfEntryPoints;
-        this.numberOfSpotsOnFloor = 4;
-
-        System.out.println("\nCreated Parking Lot with " + numberOfSpots + " slots and " + numberOfEntryPoints + " entry points!");
     }
 
+    ParkingLot(int numberOfSpots, int numberOfFloors) {
+
+        this.numberOfSpots = numberOfSpots;
+        this.numberOfFloors = numberOfFloors;
+
+        System.out.println("\nCreated Parking Lot with " + numberOfSpots + " total slots and " + numberOfFloors + " floors!");
+    }
+
+    // is there space in the parking lot?
     private boolean isSpotAvailable() {
         return (spotMap.size() < numberOfSpots);
     }
 
-    private synchronized int findNearestSpot() {
-        for (int spotId = 1; spotId <= numberOfSpots; spotId++) {
-            if (!spotMap.containsKey(spotId))
-                return spotId;
-        }
-        return -1;
-    }
+    private void fillMaps(Vehicle vehicle, ParkingSpot spot) {
 
-    private void fillMaps(Car car, ParkingSpot spot) {
-
-        // mark spot as occupied
-        spot.setParkedCar(car);
+        spot.setParkedVehicle(vehicle);
         int spotId = spot.getSpotNumber();
         spotMap.put(spotId, spot);
 
-        // populate car to spot map
-        carToSpotMap.put(car.getNumber(), spot);
+        ArrayList<ParkingSpot> spotList = new ArrayList<>();
+        if (vehicleToSpotMap.containsKey(vehicle.getNumber())) {
+            spotList = vehicleToSpotMap.get(vehicle.getNumber());
+        }
+        spotList.add(spot);
+        vehicleToSpotMap.put(vehicle.getNumber(), spotList);
 
-        // populate color to spot map
         ArrayList<ParkingSpot> colorList = new ArrayList<>();
-        if(colorToSpotMap.containsKey(car.getColor())) {
-            colorList = colorToSpotMap.get(car.getColor());
+        if(colorToSpotMap.containsKey(vehicle.getColor())) {
+            colorList = colorToSpotMap.get(vehicle.getColor());
         }
         colorList.add(spot);
-        colorToSpotMap.put(car.getColor(), colorList);
+        colorToSpotMap.put(vehicle.getColor(), colorList);
     }
 
-    private void removeFromMaps(Car car, ParkingSpot spot) {
+    public void park(Vehicle vehicle, int entryFloor) {
+        System.out.println("\nParking Vehicle Number: " + vehicle.getNumber() + " Vehicle Color: " + vehicle.getColor());
 
-        spot.setParkedCar(null);
-        int spotId = spot.getSpotNumber();
-        spotMap.remove(spotId);
-
-        carToSpotMap.remove(car.getNumber());
-
-        ArrayList<ParkingSpot> colorList= colorToSpotMap.get(car.getColor());
-        for(int i = 0;i < colorList.size(); i++) {
-            if(colorList.get(i).getSpotNumber() == spotId) {
-                colorList.remove(i);
-                break;
-            }
+        if (entryFloor >= numberOfFloors) {
+            System.out.println("Invalid Entry Floor!");
+            return;
         }
-        colorToSpotMap.put(car.getColor(), colorList);
-    }
-
-    public void park(Car car, int entryPointId) {
-        System.out.println("\nParking CarNumber: " + car.getNumber() + " CarColor: " + car.getColor());
 
         if(!isSpotAvailable()) {
             System.out.println("Sorry! Parking Lot is Full!");
             return;
         }
 
-        int spotId = findNearestSpot();
+        ArrayList<Integer> spotList = new ArrayList<>();
+        synchronized (this) {
+            spotList = vehicle.findNearestSpot(entryFloor);
+        }
 
-        ParkingSpot spot = new ParkingSpot(spotId, numberOfSpotsOnFloor);
-        fillMaps(car, spot);
-
-        System.out.println("Allocated Slot Number: " + spotId);
-
+        System.out.print("Allocated Slot Number: ");
+        for(int spotId : spotList) {
+            ParkingSpot spot = new ParkingSpot(spotId);
+            fillMaps(vehicle, spot);
+            System.out.print(spotId + ", ");
+        }
+        System.out.println();
     }
 
     public void clearSpot(int spotId) {
@@ -104,53 +86,95 @@ public class ParkingLot {
             return;
         }
 
-        Car car = spotMap.get(spotId).getParkedCar();
+        Vehicle vehicle = spotMap.get(spotId).getParkedVehicle();
+        ArrayList<ParkingSpot> spotList = vehicleToSpotMap.get(vehicle.getNumber());
 
-        ParkingSpot spot = spotMap.get(spotId);
-        removeFromMaps(car, spot);
+        vehicleToSpotMap.remove(vehicle.getNumber());
 
-        System.out.println("Spot Number: " + spotId + " is free!");
+        ArrayList<ParkingSpot> colorList= colorToSpotMap.get(vehicle.getColor());
+        for(ParkingSpot spot : spotList) {
+            for (ParkingSpot colorSpot : colorList) {
+                if (colorSpot.getSpotNumber() == spot.getSpotNumber()) {
+                    colorList.remove(colorSpot);
+                    break;
+                }
+            }
+        }
+        colorToSpotMap.put(vehicle.getColor(), colorList);
+
+        System.out.print("Spot Numbers: ");
+        for(ParkingSpot spot : spotList) {
+            spot.setParkedVehicle(null);
+            spotMap.remove(spot.getSpotNumber());
+            System.out.print(spot.getSpotNumber() + " ,");
+        }
+
+        System.out.println(" are free!");
     }
 
-    public void getCarNumberWithColor(String color) {
-        System.out.println("\nPrinting CarNumbers for Color: " + color);
+    // Gets vehicle numbers of all vehicles of a particular color
+    public void getVehicleNumberWithColor(String color) {
+        System.out.println("\nPrinting Vehicle Numbers for Color: " + color);
 
         ArrayList<ParkingSpot> spotList = colorToSpotMap.get(color);
-        System.out.print("Cars with Color " + color + ": ");
-        for(int i = 0; i<spotList.size();i++) {
-            System.out.print(spotList.get(i).getParkedCar().getNumber() + ", ");
+        System.out.print("Vehicles with Color " + color + ": ");
+        Vehicle lastVehicle = null;
+        for(ParkingSpot spot : spotList) {
+            if (spot.getParkedVehicle() != lastVehicle) {
+                lastVehicle = spot.getParkedVehicle();
+                System.out.print(spot.getParkedVehicle().getNumber() + ", ");
+            }
         }
         System.out.println();
     }
 
+    // Gets parking spot numbers having cars of a particular color
     public void getSpotNumberWithColor(String color) {
         System.out.println("\nPrinting SpotIds for Color: " + color);
 
         ArrayList<ParkingSpot> spotList = colorToSpotMap.get(color);
         System.out.print("Spots with Color " + color + ": ");
-        for(int i = 0; i<spotList.size();i++) {
-            System.out.print(spotList.get(i).getSpotNumber() + ", ");
+        for(ParkingSpot spot : spotList) {
+            System.out.print(spot.getSpotNumber() + ", ");
         }
         System.out.println();
     }
 
-    public void getSpotForCarNumber(String carNumber) {
-        System.out.println("\nPrinting SpotId for CarNumber: " + carNumber);
+    // Gets ParkingSpot number vehicle is parked in when given vehicle number as input
+    public void getSpotForVehicleNumber(String vehicleNumber) {
+        System.out.println("\nPrinting SpotIds for Vehicle Number: " + vehicleNumber);
 
-        if (!carToSpotMap.containsKey(carNumber)) {
+        if (!vehicleToSpotMap.containsKey(vehicleNumber)) {
             System.out.println("Not found!");
             return;
         }
-        System.out.println(carToSpotMap.get(carNumber).getSpotNumber());
+        ArrayList<ParkingSpot> spotList = vehicleToSpotMap.get(vehicleNumber);
+        for(ParkingSpot spot : spotList) {
+            System.out.print(spot.getSpotNumber() + ", ");
+        }
+        System.out.println();
     }
 
+    // Printing the Parking Lot status at any moment in time
     public void printLotStatus() {
         System.out.println("\nPrinting Lot Status: ");
 
         for (int spotId : spotMap.keySet()) {
-            Car car = spotMap.get(spotId).getParkedCar();
-            System.out.println("SpotID: " + spotId + " Car Number: " + car.getNumber() + " Car Color: " + car.getColor());
+            Vehicle vehicle = spotMap.get(spotId).getParkedVehicle();
+            System.out.println("SpotID: " + spotId + " Vehicle Number: " + vehicle.getNumber() + " Vehicle Type: " + vehicle.getVehicleType() + " Vehicle Color: " + vehicle.getColor());
         }
+    }
+
+    public HashMap<Integer, ParkingSpot> getSpotMap() {
+        return spotMap;
+    }
+
+    public int getNumberOfSpots() {
+        return numberOfSpots;
+    }
+
+    public int getNumberOfFloors() {
+        return numberOfFloors;
     }
 
 }

@@ -1,24 +1,23 @@
 public class ParkingSpot {
     private int spotNumber;
     private int spotLevel;
-    private Car parkedCar;
+    private Vehicle parkedVehicle;
 
-    ParkingSpot(int spotNumber, int numberOfSpotsOnFloor) {
+    ParkingSpot(int spotNumber) {
         this.spotNumber = spotNumber;
-        this.spotLevel = spotNumber/numberOfSpotsOnFloor;
-        this.parkedCar = null;
+        this.parkedVehicle = null;
     }
 
     int getSpotNumber() {
         return spotNumber;
     }
 
-    Car getParkedCar() {
-        return parkedCar;
+    Vehicle getParkedVehicle() {
+        return parkedVehicle;
     }
 
-    void setParkedCar(Car car) {
-        parkedCar = car;
+    void setParkedVehicle(Vehicle vehicle) {
+        parkedVehicle = vehicle;
     }
 
     int getSpotLevel() {

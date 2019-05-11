@@ -1,8 +1,11 @@
-public class Vehicle {
+import java.util.ArrayList;
+
+public abstract class Vehicle implements Parkable{
 
     private String vehicleNumber;
     private String vehicleColor;
-    protected int spotsNeeded;
+    private String vehicleType;
+    private int spotsNeeded;
 
     Vehicle(String carNumber, String carColor) {
         this.vehicleNumber = carNumber;
@@ -19,6 +22,18 @@ public class Vehicle {
 
     int getSpotsNeeded() {
         return spotsNeeded;
+    }
+
+    void setSpotsNeeded(int spotsNeeded) {
+        this.spotsNeeded = spotsNeeded;
+    }
+
+    String getVehicleType() {
+        return vehicleType;
+    }
+
+    void setVehicleType(String type) {
+        vehicleType = type;
     }
 
 }
