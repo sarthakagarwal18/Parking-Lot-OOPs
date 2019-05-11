@@ -1,18 +1,24 @@
-public abstract class Vehicle {
+public class Vehicle {
 
-    protected int vehicleNumber;
-    protected int vehicleType;
+    private String vehicleNumber;
+    private String vehicleColor;
+    protected int spotsNeeded;
 
-    Vehicle(int vehicleNumber) {
-        this.vehicleNumber = vehicleNumber;
+    Vehicle(String carNumber, String carColor) {
+        this.vehicleNumber = carNumber;
+        this.vehicleColor = carColor;
     }
 
-    int getVehicleNumber() {
+    String getNumber() {
         return vehicleNumber;
     }
 
-    int getVehicleType() {
-        return vehicleType;
+    String getColor() {
+        return vehicleColor;
+    }
+
+    int getSpotsNeeded() {
+        return spotsNeeded;
     }
 
 }

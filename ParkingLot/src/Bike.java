@@ -1,8 +1,8 @@
 public class Bike extends Vehicle{
 
-    Bike(int vehicleNumber) {
-        super(vehicleNumber);
-        this.vehicleType = 2;
+    Bike(String bikeNumber, String bikeColor) {
+        super(bikeNumber, bikeColor);
+        spotsNeeded = 1;
     }
 
 }

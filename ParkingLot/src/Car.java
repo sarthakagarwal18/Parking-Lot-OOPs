@@ -1,8 +1,8 @@
 public class Car extends Vehicle{
 
-    Car(int vehicleNumber) {
-        super(vehicleNumber);
-        this.vehicleType = 1;
+    Car(String carNumber, String carColor) {
+        super(carNumber, carColor);
+        spotsNeeded = 2;
     }
 
 }
